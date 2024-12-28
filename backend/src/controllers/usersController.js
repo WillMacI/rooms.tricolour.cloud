@@ -33,6 +33,17 @@ const getUserByUUID = async (req, res) => {
     }
 };
 
+// Get a user by Organization
+const getUserByOrg = async (req, res) => {
+    try {
+        const users = await User.findAll({where: {org_uuid: req.params.organization}});
+        if (!users) return res.status(404).json({ error: 'Organization or users not found.' });
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Update a user by UUID
 const updateUserByUUID = async (req, res) => {
     try {
@@ -65,4 +76,5 @@ module.exports = {
     getUserByUUID,
     updateUserByUUID,
     deleteUserByUUID,
+    getUserByOrg,
 };

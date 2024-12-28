@@ -7,7 +7,7 @@ const Organization = sequelize.define('Organization', {
         primaryKey: true
     },
     name: {
-        type: DataTypes.DATE,
+        type: DataTypes.STRING,
         allowNull: false,
     },
     super_admin_uuid: {

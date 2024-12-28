@@ -8,5 +8,8 @@
     "nodemon": "^3.1.9",
     "sequelize": "^6.37.5",
     "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.2"
   }
 }
