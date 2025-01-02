@@ -12,8 +12,9 @@ require('dotenv').config({ path: './config/.env' });
 // Services needed for the controller
 const { sendEmail } = require('../services/emailService');
 const { getOrganizationBySlug } = require('../utils/getOrgInfo');
-const { getUserByEmail } = require('../utils/getUserInfo');
+const { getUserByEmail, createGuestUser } = require('../utils/getUserInfo');
 const { generateJWT } = require('../utils/generateJWT');
+const { validateEmail, validateUuid } = require('../utils/validateInput');
 
 // Admin and Super Admin login
 const login = async (req, res) => {
@@ -111,30 +112,56 @@ const send_otp = async (req, res) => {
 // Check OTP for user login
 const check_otp = async (req, res) => {
     try {
+        let first_time_login = false;
         const { OTP, email, org_slug } = req.body;
 
-        // Check if a user exists with the correct information
-        const user = await getUserByEmail(email);
-
-        // Check if the user is in the correct organization
-        const org_data = await getOrganizationBySlug(org_slug);
-        if (user.org_uuid !== org_data.uuid) {
-            return res.status(401).json({ error: 'Invalid email or organization' });
+        // Validate input
+        if(!OTP || !email || !org_slug){
+            return res.status(400).json({ error: 'Email, OTP and organization are required.' });
+        } else if(!validateEmail(email)){
+            return res.status(400).json({ error: 'Invalid email.' });
         }
 
-        // Check if the OTP is correct
-        const otp = await Otp.findOne({ where: { user_email: email, org_uuid: org_data.uuid } });
-        if (!otp || otp.OTP !== OTP) {
-            return res.status(401).json({ error: 'Invalid OTP' });
+        // Find organization by slug
+        const org = await getOrganizationBySlug(org_slug);
+        if (org == null) {
+            return res.status(404).json({ error: 'Organization not found.' });
+        }
+
+        // Check if OTP exists
+        const otp = await Otp.findOne({ where: { user_email: email, org_uuid: org.uuid } });
+        if (otp == null) {
+            return res.status(401).json({ error: 'Invalid email or organization' });
+        } else if(otp.OTP !== OTP){
+            return res.status(401).json({ error: 'Invalid OTP.' });
+        }
+
+        // Check if a user exists with the correct information
+        let user = await getUserByEmail(email);
+        if(user == null){
+            // If the user does not exist create a guest for them
+            first_time_login = true;
+            const new_guest_user = await createGuestUser(email, org.uuid);
+            if(new_guest_user == null){
+                return res.status(500).json({ error: 'Error creating guest user.' });
+            } else {
+                user = new_guest_user;
+            }
+        }
+
+        // Check if the user is in the correct organization
+        if (user.org_uuid !== org.uuid) {
+            return res.status(401).json({ error: 'Invalid email or organization' });
         }
 
         // Generate JWT token
         const token = await generateJWT(user);
 
         // Delete OTP from database
-        await Otp.destroy({ where: { user_email: email, org_uuid: org_data.uuid} });
+        await Otp.destroy({ where: { user_email: email, org_uuid: org.uuid} });
 
-        res.status(200).json({ token, user: { uuid: user.uuid, role: user.role, email: user.email, name: user.name } });
+        // Send response
+        res.status(200).json({ token, user: { uuid: user.uuid, role: user.role, email: user.email, name: user.name }, first_time_login : first_time_login });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
