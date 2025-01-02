@@ -18,6 +18,14 @@ const Room = sequelize.define('Room', {
     features: {
         type: DataTypes.JSON,
         allowNull: true, // Array of features (e.g., ['projector', 'whiteboard'])
+    },
+    is_public: { // Whether the room is public or private, guests can not view private rooms
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+    },
+    approval_by: { // Which users can approve bookings
+        type: DataTypes.JSON,
+        allowNull: true
     }
 }, {
     timestamps: true,
