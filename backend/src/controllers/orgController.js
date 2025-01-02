@@ -59,7 +59,22 @@ const deleteOrgByUUID = async (req, res) => {
     }
 };
 
+const getOrgBySlug = async (req, res) => {
+    try {
+        const org = await Org.findOne({
+            where: { slug: req.params.slug },
+            attributes: ['uuid', 'name', 'logo_path', 'primary_color', 'settings'] // Specify the fields to include
+
+        });
+        if (!org) return res.status(404).json({ error: 'Org not found' });
+        res.status(200).json(org);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
 module.exports = {
+    getOrgBySlug,
     createOrg,
     getAllOrgs,
     updateOrgByUUID,

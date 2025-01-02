@@ -2,32 +2,22 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import AdminRouter from './routes/AdminRouter';
+import OrgRouter from './routes/OrgRouter';
+import NotFound from "./pages/NotFound";
+const App = () => (
+    <Router>
+        <Routes>
+            {/* Admin Routes */}
+            <Route path="/admin/*" element={<AdminRouter />} />
 
-const App = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(
-        !!localStorage.getItem('token')
-    );
+            {/* Tenant Routes */}
+            <Route path="/:org/*" element={<OrgRouter />} />
 
-    const handleLogin = () => {
-        setIsAuthenticated(true);
-    };
+            {/* Fallback */}
+            <Route path="*" element={<NotFound />} />
+        </Routes>
+    </Router>
+);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        setIsAuthenticated(false);
-    };
-
-    return (
-        <Router>
-            <div>
-                <Routes>
-
-                    {/* Admin Routes */}
-                    <Route path="/admin/*" element={<AdminRouter />} />
-                </Routes>
-            </div>
-        </Router>
-    );
-};
 
 export default App;
