@@ -3,10 +3,13 @@ const { sequelize } = require('../config/db');
 const User = require('./User');
 const Room = require('./Room');
 const Organization = require('./Organization');
+const {v4: uuidv4} = require("uuid");
 
 const Booking = sequelize.define('Booking', {
     uuid: {
-        type: DataTypes.CHAR(36),
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        unique: true,
         primaryKey: true
     },
     start_time: {

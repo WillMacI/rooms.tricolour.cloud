@@ -4,6 +4,8 @@ import Dashboard from './pages/Dashboard';
 import AdminRouter from './routes/AdminRouter';
 import OrgRouter from './routes/OrgRouter';
 import NotFound from "./pages/NotFound";
+import Forbidden from "./pages/Forbidden";
+
 const App = () => (
     <Router>
         <Routes>
@@ -12,6 +14,9 @@ const App = () => (
 
             {/* Tenant Routes */}
             <Route path="/:org/*" element={<OrgRouter />} />
+
+            <Route path="/403" element={<Forbidden />} />
+            <Route path="/404" element={<NotFound />} />
 
             {/* Fallback */}
             <Route path="*" element={<NotFound />} />

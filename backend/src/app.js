@@ -34,10 +34,14 @@ require('dotenv').config({ path: './config/.env' });
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const orgRoutes = require('./routes/orgRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 
 app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
 app.use('/organizations', orgRoutes);
+app.use('/rooms', roomRoutes);
+app.use('/bookings', bookingRoutes);
 // Example route
 app.get('/', (req, res) => {
     res.send('Room Booking API is running...');

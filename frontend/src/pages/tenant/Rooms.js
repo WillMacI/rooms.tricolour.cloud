@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { List, Card, Typography, Spin, message } from 'antd';
+import { Link, useParams } from 'react-router-dom';
 import api from '../../services/api';
-import { useParams } from 'react-router-dom';
 
 const { Title } = Typography;
 
-const Rooms = () => {
+const Rooms = ({ orgData }) => {
     const { org } = useParams();
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ const Rooms = () => {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await api.get(`/organizations/${org}/rooms`);
+                const response = await api.get(`/rooms/org/${orgData.uuid}`);
                 setRooms(response.data);
             } catch (error) {
                 message.error('Failed to fetch rooms');
@@ -37,10 +37,12 @@ const Rooms = () => {
                 dataSource={rooms}
                 renderItem={room => (
                     <List.Item>
-                        <Card title={room.name}>
-                            <p>{room.description}</p>
-                            <p>Capacity: {room.capacity}</p>
-                        </Card>
+                        <Link to={'/'+org+`/booking/${room.uuid}`}>
+                            <Card title={room.name} style={{cursor:'pointer'}}>
+                                <p>{room.description}</p>
+                                <p>Capacity: {room.capacity}</p>
+                            </Card>
+                        </Link>
                     </List.Item>
                 )}
             />

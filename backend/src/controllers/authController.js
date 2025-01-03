@@ -40,7 +40,7 @@ const login = async (req, res) => {
         // Generate JWT token
         const token = await generateJWT(user);
 
-        res.status(200).json({ token, user: { uuid: user.uuid, role: user.role, email: user.email, name: user.name } });
+        res.status(200).json({ token, user: { uuid: user.uuid, role: user.role, email: user.email, name: user.name, org: user.org_uuid }, first_time_login : false });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -161,7 +161,7 @@ const check_otp = async (req, res) => {
         await Otp.destroy({ where: { user_email: email, org_uuid: org.uuid} });
 
         // Send response
-        res.status(200).json({ token, user: { uuid: user.uuid, role: user.role, email: user.email, name: user.name }, first_time_login : first_time_login });
+        res.status(200).json({ token, user: { uuid: user.uuid, role: user.role, email: user.email, name: user.name, org: user.org_uuid }, first_time_login : first_time_login });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

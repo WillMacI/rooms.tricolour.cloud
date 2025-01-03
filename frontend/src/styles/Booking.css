@@ -1,0 +1,73 @@
+.booking-grid-container {
+    position: relative;
+    overflow-x: auto; /* Horizontal scrolling for the grid */
+}
+
+.booking-grid {
+    display: grid;
+    grid-template-rows: auto auto;
+    position: relative;
+    width: 2400px; /* Ensure the grid width matches the total time slots */
+}
+
+.time-row, .availability-row {
+    display: grid;
+    grid-template-columns: repeat(48, 1fr); /* 48 slots for 30-minute intervals */
+    gap: 2px;
+}
+
+.time-slot {
+    text-align: center;
+    font-size: 12px;
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    padding: 5px;
+    white-space: nowrap;
+}
+
+.availability-slot {
+    height: 20px;
+    border: 1px solid #ddd;
+    background-color: #90ee90; /* Green for available */
+}
+
+.availability-slot.unavailable {
+    background-color: #f08080; /* Red for unavailable */
+}
+
+.current-time-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: red;
+    z-index: 10;
+    pointer-events: none;
+}
+.color-key {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.key-item {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+}
+
+.key-color {
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+}
+
+.key-color.available {
+    background-color: #90ee90;
+}
+
+.key-color.unavailable {
+    background-color: #f08080;
+}
+.occupied {
+    background-color: #ffcc00; /* Yellow color for occupied slots */
+}
