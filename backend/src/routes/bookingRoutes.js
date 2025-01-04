@@ -9,8 +9,8 @@ router.get('/', authenticate, authorize(['super_admin']), bookingController.getA
 router.get('/uuid/:uuid', authenticate, bookingController.getBookingByUUID);
 router.get('/room/:uuid', authenticate, bookingController.getBookingsByRoomUUID);
 router.get('/org/:organization', authenticate, orgCheck, bookingController.getBookingsByOrg);
-router.get('/user/:uuid', authenticate, orgCheck, bookingController.getBookingByUserUUID);
-router.get('/statistics/:uuid', authenticate, orgCheck, bookingController.getUserStatistics);
+router.get('/user/:uuid', authenticate, bookingController.getBookingByUserUUID);
+router.get('/statistics/:uuid', authenticate, bookingController.getUserStatistics);
 
 router.put('/:uuid', authorize(['super_admin', 'admin']), bookingController.updateBookingByUUID);
 router.delete('/:uuid', authenticate, authorize(['super_admin', 'org_admin']), bookingController.deleteBookingByUUID);

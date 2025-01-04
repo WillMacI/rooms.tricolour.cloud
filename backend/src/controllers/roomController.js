@@ -1,6 +1,6 @@
 const Room = require('../models/Room');
 const bcrypt = require('bcrypt');
-
+const {getRoleSettings} = require('../utils/getUserInfo');
 // Create a new Room
 const createRoom = async (req, res) => {
     try {
@@ -36,9 +36,16 @@ const getRoomByUUID = async (req, res) => {
 // Get a Room by Organization
 const getRoomsByOrg = async (req, res) => {
     try {
-        const rooms = await Room.findAll({where: {org_uuid: req.params.organization}});
-        if (!rooms) return res.status(404).json({ error: 'Organization or Rooms not found.' });
-        res.status(200).json(rooms);
+        const isAbleToSeePrivateRooms = getRoleSettings(req.user.role).can_request_private_rooms;
+        if(isAbleToSeePrivateRooms){
+            const rooms = await Room.findAll({where: {org_uuid: req.params.organization}});
+            if (!rooms) return res.status(404).json({ error: 'Organization or Rooms not found.' });
+            return res.status(200).json(rooms);
+        } else {
+            const rooms = await Room.findAll({where: {org_uuid: req.params.organization, is_public: true}});
+            if (!rooms) return res.status(404).json({ error: 'Organization or Rooms not found.' });
+            return res.status(200).json(rooms);
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import {Layout, Typography, Avatar, Button, message, Modal, List, Dropdown, Menu, Tag} from 'antd';
+import { Layout, Typography, Avatar, Button, message, Modal, List, Dropdown, Menu, Tag } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { useParams, useNavigate } from 'react-router-dom';
+import {useParams, useNavigate, Link} from 'react-router-dom';
 import moment from 'moment-timezone';
 import api from '../../services/api';
 
@@ -15,8 +15,12 @@ const TenantHeader = ({ orgData }) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [bookings, setBookings] = useState([]);
     const [rooms, setRooms] = useState([]);
-    const [hoursLeft] = useState(0);
-    const user = JSON.parse(localStorage.getItem('user'));
+    const [bookingHoursUsed, setBookingHoursUsed] = useState(0);
+    const [bookingHoursAllowed, setBookingHoursAllowed] = useState(0);
+    let user = null;
+    if (isLoggedIn) {
+        user = JSON.parse(localStorage.getItem('user'));
+    }
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -37,7 +41,7 @@ const TenantHeader = ({ orgData }) => {
                 const end = moment(booking.end_time);
                 return acc + end.diff(start, 'hours', true);
             }, 0);
-
+            setBookingHoursUsed(totalHours);
         } catch (err) {
             message.error('Failed to fetch bookings.');
         }
@@ -50,11 +54,28 @@ const TenantHeader = ({ orgData }) => {
         } catch (err) {
             message.error('Failed to fetch rooms.');
         }
-    }
+    };
+
+    const fetchBookingStats = async () => {
+        try {
+            const response = await api.get(`/bookings/statistics/${user.uuid}`);
+            setBookingHoursUsed(response.data.hours_used);
+            setBookingHoursAllowed(response.data.hours_allowed);
+        } catch (err) {
+            console.log(err)
+            message.error('Failed to fetch booking stats.');
+        }
+    };
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            fetchBookingStats();
+        }
+    }, [isLoggedIn]);
 
     const showModal = () => {
-        fetchRooms();
         fetchBookings();
+        fetchRooms();
         setIsModalVisible(true);
     };
 
@@ -69,24 +90,28 @@ const TenantHeader = ({ orgData }) => {
 
     const menu = (
         <Menu>
-            <Menu.Item key="0">
-                <Tag bordered={false} color="processing">
-                    {user.role}
-                </Tag>
-            </Menu.Item>
-            <Menu.Item key="1">
-                <span><b>Hours left for booking: </b>{`${hoursLeft.toFixed(2)}`}</span>
-            </Menu.Item>
-            <Menu.Item key="2" danger onClick={handleLogout}>
-                Logout
-            </Menu.Item>
+            {isLoggedIn && (
+                <>
+                    <Menu.Item key="0">
+                        <Tag bordered={false} color="processing">
+                            {user.role}
+                        </Tag>
+                    </Menu.Item>
+                    <Menu.Item key="1">
+                        <span><b>{bookingHoursUsed} of {bookingHoursAllowed}</b> hours used this month. </span>
+                    </Menu.Item>
+                    <Menu.Item key="2" danger onClick={handleLogout}>
+                        Logout
+                    </Menu.Item>
+                </>
+            )}
         </Menu>
     );
 
     return (
         <Header style={{ display: 'flex', alignItems: 'center', backgroundColor: '#fff', padding: '0 20px', boxShadow: '0 2px 8px #f0f1f2' }}>
             <Avatar src={'/images/org_logos/' + orgData.logo_path} size="large" style={{ marginRight: '20px' }} />
-            <Title level={3} style={{ margin: 0, flex: 1 }}>{orgData.name}</Title>
+                <Title level={3} style={{ margin: 0, flex: 1 }}><Link style={{color: 'black'}} to={'/' + org + '/rooms'}>{orgData.name}            </Link></Title>
             {isLoggedIn && (
                 <>
                     <Button type="primary" onClick={showModal} style={{ marginRight: '10px' }}>My Upcoming Bookings</Button>
@@ -97,7 +122,7 @@ const TenantHeader = ({ orgData }) => {
                     </Dropdown>
                 </>
             )}
-            <Modal title="My Bookings" visible={isModalVisible} onCancel={handleCancel} footer={null}>
+            <Modal title="My Upcoming Bookings" visible={isModalVisible} onCancel={handleCancel} footer={null}>
                 <List
                     dataSource={bookings}
                     renderItem={item => (

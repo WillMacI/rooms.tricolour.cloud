@@ -1,7 +1,7 @@
 const Booking = require('../models/Booking');
 const bcrypt = require('bcrypt');
 const { getOrganizationByUuid } = require('../utils/getOrgInfo');
-const { getNumberOfBookingsThisMonth, getHoursAllowedThisMonth, getHoursUsedThisMonth } = require('../utils/bookingStatistics');
+const { getNumberOfBookingsThisMonth, getHoursAllowedThisMonth, getHoursUsedThisMonth, getHoursUsedOnDate, getHoursAllowedDaily } = require('../utils/bookingStatistics');
 const { isRoomPublic, doesRoomExist } = require('../utils/roomsHelper');
 // Create a new booking
 const createBooking = async (req, res) => {
@@ -12,24 +12,25 @@ const createBooking = async (req, res) => {
             return res.status(400).json({ error: 'Please provide all required fields. ' });
         }
 
-        // Check that start time and end time are valid and are in date time format
+        // Check that start time and end time are valid and are in date time format, also check that the booking is not occuring in the past
         if (new Date(req.body.start_time) === 'Invalid Date' || new Date(req.body.end_time) === 'Invalid Date') {
             return res.status(400).json({ error: 'Please provide a valid start and end time.' });
         } else if (new Date(req.body.start_time) > new Date(req.body.end_time)) {
             return res.status(400).json({ error: 'Start time cannot be greater than end time.' });
+        } else if (new Date(req.body.start_time) < new Date()) {
+            return res.status(400).json({ error: 'Start time cannot be in the past.' });
         }
 
         // Pull org data for info about settings
         const org = await getOrganizationByUuid(req.body.org_uuid);
         if (!org){
-            console.log("Org does not exist. ")
             return res.status(404).json({ error: 'Organization not found' });
         }
 
         // Check if room exists
         if (!doesRoomExist(req.body.room_uuid)) {
             console.log("Room does not exist")
-            return res.status(404).json({ error: 'Room not found' });
+            return res.status(404).json({ error: 'The room you are trying to book does not exist.' });
         }
 
         // Pull org settings for booking based on user role
@@ -49,18 +50,21 @@ const createBooking = async (req, res) => {
             }
         }
 
-        // Grab user stats from past bookings
-        const userNumberOfBookingsThisMonth = getNumberOfBookingsThisMonth(req.user.uuid);
-
-        // Check if user has exceeded booking limit
-        if (userNumberOfBookingsThisMonth >= getBookingRulesByRole(req.user.role).max_bookings_per_month) {
-            return res.status(400).json({ error: 'You have exceeded the maximum number of bookings for this month.' });
+        // Check if user has exceeded the maximum number of hours allowed for the month
+        const hoursAllowed = await getHoursAllowedThisMonth(req.user.uuid, req.user.org_uuid);
+        const hoursUsed = await getHoursUsedThisMonth(req.user.uuid);
+        const hours = Math.abs(new Date(req.body.end_time) - new Date(req.body.start_time)) / 36e5;
+        if (hoursUsed + hours > hoursAllowed) {
+            return res.status(403).json({ error: 'You have exceeded the maximum number of booking hours allowed for the month.' });
         }
 
-        // Calculate the number of hours between the start time and end time then check against room booking rules
-        const hours = Math.abs(new Date(req.body.end_time) - new Date(req.body.start_time)) / 36e5;
-        if (hours > getBookingRulesByRole(req.user.role).max_booking_hours) {
-            return res.status(400).json({ error: 'You have exceeded the maximum booking hours for this room this month.' });
+        // Check if user is trying to book more than the maximum number of hours allowed for the day
+        const hoursAllowedDaily = await getHoursAllowedDaily(req.user.uuid, req.user.org_uuid);
+        const hoursUsedOnDate = await getHoursUsedOnDate(req.user.uuid, new Date(req.body.start_time));
+        console.log(hoursAllowedDaily)
+        console.log(hoursUsedOnDate)
+        if (hoursUsedOnDate + hours > hoursAllowedDaily) {
+            return res.status(403).json({ error: 'You have exceeded the maximum number of booking hours allowed for that day. You are only allowed '+hoursAllowedDaily+' booking hours per day.' });
         }
 
         const booking = await Booking.create({ room_uuid: req.body.room_uuid, start_time: req.body.start_time, end_time: req.body.end_time, org_uuid: req.body.org_uuid, user_uuid: req.user.uuid });
@@ -143,8 +147,8 @@ const updateBookingByUUID = async (req, res) => {
 // Get user booking statistics
 const getUserStatistics = async (req, res) => {
     try {
-        const hoursAllowed = getHoursAllowedThisMonth(req.user.uuid, req.user.org_uuid);
-        const hoursUsed = getHoursUsedThisMonth(req.user.uuid);
+        const hoursAllowed = await getHoursAllowedThisMonth(req.user.uuid, req.user.org_uuid);
+        const hoursUsed = await getHoursUsedThisMonth(req.user.uuid);
         res.status(200).json({ hours_used: hoursUsed, hours_allowed: hoursAllowed });
     } catch (error) {
         res.status(500).json({ error: error.message });

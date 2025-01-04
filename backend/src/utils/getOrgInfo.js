@@ -48,8 +48,25 @@ const getAllOrganizations = async () => {
     }
 };
 
+/**
+ * Get organization settings for users by uuid
+ * @param {string} uuid - The UUID of the organization
+ * @returns {Promise<Array>} - The organization settings
+ */
+const getOrganizationSettingsByUuid = async (uuid) => {
+    try {
+        const organization = await Organization.findOne({where: {uuid}});
+        if (!organization) {
+            return null;
+        }
+        return organization.settings;
+    } catch (error) {
+        return null;
+    }
+}
 module.exports = {
     getOrganizationByUuid,
     getAllOrganizations,
+    getOrganizationSettingsByUuid,
     getOrganizationBySlug
 };

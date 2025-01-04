@@ -13,7 +13,7 @@ const generateJWT = async (user) => {
             throw new Error('JWT_SECRET is not defined in the environment variables');
         }
         return jwt.sign(
-            { uuid: user.uuid, role: user.role },
+            { uuid: user.uuid, role: user.role, org_uuid: user.org_uuid },
             secret,
             { expiresIn: '1h' }
         );

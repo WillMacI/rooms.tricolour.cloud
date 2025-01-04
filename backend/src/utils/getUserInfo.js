@@ -1,6 +1,7 @@
 // backend/src/utils/getUserInfo.js
 const User = require('../models/User');
 const randomString = require('randomstring');
+const {getOrganizationSettingsByUuid} = require('./getOrgInfo')
 /**
  * Get user by UUID
  * @param {string} uuid - The UUID of the user
@@ -68,9 +69,26 @@ const createGuestUser = async (email, org_uuid) => {
         return null;
     }
 }
+
+/**
+ * Gets settings for the current user's role
+ * @param {string} uuid - The UUID of the user
+ * @returns {object} - The users role settings
+ */
+const getRoleSettings = async (uuid) => {
+    try {
+        const user = await getUserByUuid(uuid);
+        const organization_settings = await getOrganizationSettingsByUuid(user.org_uuid);
+        return organization_settings[user.role];
+    } catch (error) {
+        return null;
+    }
+}
+
 module.exports = {
     getUserByUuid,
     createGuestUser,
     getUserByEmail,
     getAllUsers,
+    getRoleSettings,
 };
